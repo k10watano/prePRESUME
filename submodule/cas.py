@@ -460,8 +460,8 @@ def jobscript_writer(seq, serial_number, args, timelimit):
         .split('\n'))[0]
 
     # create intermediate file
-    intermediate_file_name = \
-        "intermediate/fasta/{}.seq".\ 
+    intermediate_file_path = \
+        "intermediate/fasta/{}.seq".\
         format(str(esu.id))
     sequence_writer(esu.id, esu.seq, intermediate_file_path, True)
 
