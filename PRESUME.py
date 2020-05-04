@@ -999,7 +999,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--cassiopeia",
-        help="using cassiopeir-model",
+        help="using cassiopeia-model",
         action='store_true',
         default=False
         )
@@ -1042,7 +1042,7 @@ if __name__ == "__main__":
         print(LOGO)
         exit()
 
-    if args.cassiopeir:
+    if args.cassiopeia:
         import submodule.cas as cas
         cas.PRESUME_CAS(args)
         exit()
