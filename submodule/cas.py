@@ -478,6 +478,7 @@ def sequences_writer(list_of_sequence, file_name, no_header=False):
             line = '\t'.join(data)
             writer.writelines(line)
 
+
 def jobscript_writer(esu, serial_number, args, timelimit):
     PATH = (((
         subprocess.Popen('echo $PATH', stdout=subprocess.PIPE,
@@ -554,6 +555,8 @@ def seq_reader(filepath):
         raw_row=reader.readline()
     sequence = raw_row.split("\t")[1:]
     return sequence
+
+
 # main
 def PRESUME_CAS(args):
     '''
@@ -778,16 +781,16 @@ def PRESUME_CAS(args):
             subprocess.call(command, shell=True)  # combine fasta
         
         # adding header
-        with open("PRESUMEout.seq","r") as f:
-            temp_data = f.readlines()
+        with open("PRESUMEout.seq","r") as reader:
+            temp_data = reader.readlines()
         character_items = args.L
         header = ["name"]
         for index in range(character_items):
             header.append("r{}".format(index))
         header_line="\t".join(header)
         writedata = [header_line] + temp_data
-        with open("PRESUMEout.seq","r") as f:
-            temp_data = f.readlines(writedata)
+        with open("PRESUMEout.seq","w") as writer:
+            temp_data = writer.writelines(writedata)
 
         fa_count = count_sequence("PRESUMEout.seq")
         tip_count = CombineTrees()  # Combine trees
