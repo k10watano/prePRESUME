@@ -787,6 +787,7 @@ def PRESUME_CAS(args):
         header = ["name"]
         for index in range(character_items):
             header.append("r{}".format(index))
+        header.append("\n")
         header_line="\t".join(header)
         writedata = [header_line] + temp_data
         with open("PRESUMEout.seq","w") as writer:
