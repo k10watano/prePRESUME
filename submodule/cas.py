@@ -296,13 +296,9 @@ def all_dead(idANC):
 
 # count number & length of sequences in a specified fasta file
 def count_sequence(in_fname):
-    with open(in_fname) as origin:
-        input_itr = SeqIO.parse(origin, "fasta")
-        # Build a list sequences:
-        number_of_sequences = 0
-        for sequ in input_itr:
-            number_of_sequences += 1
-    return number_of_sequences
+    with open(in_fname, "r") as origin:
+        input_itr = origin.readlines()
+    return len(input_itr)
 
 
 def create_newick(Lineage):
@@ -785,11 +781,11 @@ def PRESUME_CAS(args):
                 cat PRESUME.o*.* > intermediate/out; rm PRESUME.*"
         subprocess.call(command, shell=True)
         if args.f is None:
-            command = "cat intermediate/DOWN/*/PRESUMEout/PRESUMEout.fa \
-                    > PRESUMEout.fa"
+            command = "cat intermediate/DOWN/*/PRESUMEout/PRESUMEout.seq \
+                    > PRESUMEout.seq"
             subprocess.call(command, shell=True)  # combine fasta
 
-        fa_count = count_sequence("PRESUMEout.fa")
+        fa_count = count_sequence("PRESUMEout.seq")
         tip_count = CombineTrees()  # Combine trees
         shutil.move("PRESUMEout.nwk", "intermediate")
         os.rename("PRESUMEout_combined.nwk", "PRESUMEout.nwk")
