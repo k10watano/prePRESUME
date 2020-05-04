@@ -83,8 +83,9 @@ PYTHON3 = (((
     )[0]
 
 # absolute path of PRESUME directory
-PRESUME = os.path.dirname(os.path.abspath(__file__))
-
+dir_str = os.path.dirname(os.path.abspath(__file__)).split("/")
+dir_str.pop(-1)
+PRESUME = "/".join(dir_str)
 
 #   for Exception
 class PresumeException(Exception):
