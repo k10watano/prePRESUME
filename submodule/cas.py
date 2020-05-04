@@ -413,7 +413,6 @@ def sequence_writer(name, seq, file_name, overwrite_mode):
 
 
 def sequences_writer(list_of_sequence, file_name, no_header=False):
-
     # writedata = [
     # [name, character_1, character_2, ..., character_n] # header row
     # [name, 0, 0, ..., 0] # data row
@@ -445,6 +444,36 @@ def sequences_writer(list_of_sequence, file_name, no_header=False):
             line = '\t'.join(data)
             writer.writelines(line)
 
+def jobscript_writer(seq, serial_number, args, timelimit):
+    PATH = (((
+        subprocess.Popen('echo $PATH', stdout=subprocess.PIPE,
+                            shell=True)
+        .communicate()[0])
+        .decode('utf-8'))
+        .split('\n'))[0]
+
+    LD_LIBRARY_PATH = (((
+        subprocess.Popen('echo $LD_LIBRARY_PATH', stdout=subprocess.PIPE,
+                        shell=True)
+        .communicate()[0])
+        .decode('utf-8'))
+        .split('\n'))[0]
+
+        # create intermediate file
+        intermediate_file_path = \
+            "intermediate/fasta/{}.fa".\
+            format(str(esu.id))
+        if args.cassiopeia:
+            fasta_writer(esu.id, esu.seq, fasta_file_path, True) 
+        else:
+            seq_writer(esu.id, esu.seq, fasta_file_path, True) 
+
+def seq_reader(filepath):
+    with open(filepath, "r") as reader:
+        raw_row=reader.readline()
+    
+    sequence = raw_row.split("\t")[1:]
+    return sequence
 # main
 def PRESUME_CAS(args):
     '''

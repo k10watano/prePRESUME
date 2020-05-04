@@ -389,6 +389,79 @@ def survey_all_dead_lineages(Lineage):
             Lineage[dead_SEQ_id] = ["dead"]
             death(Lineage, idM)
 
+def jobscript_writer(esu, serial_number, args, timelimit):
+    PATH = (((
+        subprocess.Popen('echo $PATH', stdout=subprocess.PIPE,
+                            shell=True)
+        .communicate()[0])
+        .decode('utf-8'))
+        .split('\n'))[0]
+
+    LD_LIBRARY_PATH = (((
+        subprocess.Popen('echo $LD_LIBRARY_PATH', stdout=subprocess.PIPE,
+                        shell=True)
+        .communicate()[0])
+        .decode('utf-8'))
+        .split('\n'))[0]
+
+    # create intermediate file
+    intermediate_file_path = \
+        "intermediate/fasta/{}.fa".\
+        format(str(esu.id))
+    fasta_writer(esu.id, esu.seq, intermediate_file_path, True)
+
+    with open("intermediate/shell/esu_"+str(serial_number)+".sh", 'w') as qf:
+        qf.write("#!/bin/bash\n")
+        qf.write("#$ -S /bin/bash\n")
+        qf.write("#$ -cwd\n")
+        qf.write("PATH={}\n".format(PATH))
+        qf.write("LD_LIBRARY_PATH={}\n".format(LD_LIBRARY_PATH))
+        qf.write("mkdir intermediate/DOWN/esu_"+str(esu.id)+"\n")
+        qf.write("cd intermediate/DOWN/esu_"+str(esu.id)+"\n")
+        qf.write("pwd\n")
+
+        # divide until time point of (2 * timelimit)
+        if args.CV:
+            python_command = PYTHON3 + " " + PRESUME + "/PRESUME.py "\
+                "--monitor " + str(2*timelimit)\
+                + " -L "+str(args.L)\
+                + " -f "+"../../../fasta/"+str(esu.id)+".fa"\
+                + " -d "+str(esu.d)\
+                + " -s "+str(args.s)\
+                + " -T "+str(args.T)\
+                + " -e "+str(args.e)\
+                + " -u "+str(args.u)\
+                + " --idANC "+str(esu.id)\
+                + " --tMorigin "+str(esu.t-esu.d)\
+                + " --CV"\
+                + " --seed " + str(np.random.randint(0, args.r))
+        else:
+            python_command = PYTHON3 + " " + PRESUME + "/PRESUME.py "\
+                "--monitor " + str(2*timelimit)\
+                + " -L "+str(L)\
+                + " -f "+"../../../fasta/"+str(esu.id)+".fa"\
+                + " -d "+str(esu.d)\
+                + " -s "+str(args.s)\
+                + " -T "+str(args.T)\
+                + " -e "+str(args.e)\
+                + " -u "+str(args.u)\
+                + " --idANC "+str(esu.id)\
+                + " --tMorigin "+str(esu.t-esu.d)\
+                + " --seed " + str(np.random.randint(0, args.r))
+
+        qf.write(python_command)
+        if (args.gtrgamma is not None):
+            qf.write(" --gtrgamma "+str(args.gtrgamma)+"\n")
+        if (args.constant is not None):
+            qf.write(" --constant "+str(args.constant)+"\n")
+    return
+
+def seq_reader(filepath):
+    with open(filepath, "r") as reader:
+        raw_row=reader.readline()
+    
+    sequence = raw_row.split("\t")[1:]
+    return sequence
 
 def CombineTrees():
     top_tree = Phylo.read('PRESUMEout.nwk', 'newick')
@@ -648,6 +721,7 @@ def main(timelimit):
 
     # in case of distributed computing
     if (args.qsub):
+        
         # preparation for qsub
         os.mkdir("intermediate")
         os.mkdir("intermediate/DOWN")
@@ -670,55 +744,56 @@ def main(timelimit):
         itr = 0
         for esu in SEQqueue:
             itr += 1
-            fasta_file_path = \
-                "intermediate/fasta/{}.fa".\
-                format(str(esu.id))
-            fasta_writer(esu.id, esu.seq, fasta_file_path, True)
+            jobscript_writer(esu, itr, args, timelimit)
+            # fasta_file_path = \
+            #     "intermediate/fasta/{}.fa".\
+            #     format(str(esu.id))
+            # fasta_writer(esu.id, esu.seq, fasta_file_path, True)
 
-            with open("intermediate/shell/esu_"+str(itr)+".sh", 'w') as qf:
-                qf.write("#!/bin/bash\n")
-                qf.write("#$ -S /bin/bash\n")
-                qf.write("#$ -cwd\n")
-                qf.write("PATH={}\n".format(PATH))
-                qf.write("LD_LIBRARY_PATH={}\n".format(LD_LIBRARY_PATH))
-                qf.write("mkdir intermediate/DOWN/esu_"+str(esu.id)+"\n")
-                qf.write("cd intermediate/DOWN/esu_"+str(esu.id)+"\n")
-                qf.write("pwd\n")
+            # with open("intermediate/shell/esu_"+str(itr)+".sh", 'w') as qf:
+            #     qf.write("#!/bin/bash\n")
+            #     qf.write("#$ -S /bin/bash\n")
+            #     qf.write("#$ -cwd\n")
+            #     qf.write("PATH={}\n".format(PATH))
+            #     qf.write("LD_LIBRARY_PATH={}\n".format(LD_LIBRARY_PATH))
+            #     qf.write("mkdir intermediate/DOWN/esu_"+str(esu.id)+"\n")
+            #     qf.write("cd intermediate/DOWN/esu_"+str(esu.id)+"\n")
+            #     qf.write("pwd\n")
 
-                # divide until time point of (2 * timelimit)
-                if args.CV:
-                    python_command = PYTHON3 + " " + PRESUME + "/PRESUME.py "\
-                        "--monitor " + str(2*timelimit)\
-                        + " -L "+str(L)\
-                        + " -f "+"../../../fasta/"+str(esu.id)+".fa"\
-                        + " -d "+str(esu.d)\
-                        + " -s "+str(sigma_origin)\
-                        + " -T "+str(T)\
-                        + " -e "+str(e)\
-                        + " -u "+str(UPPER_LIMIT)\
-                        + " --idANC "+str(esu.id)\
-                        + " --tMorigin "+str(esu.t-esu.d)\
-                        + " --CV"\
-                        + " --seed " + str(np.random.randint(0, args.r))
-                else:
-                    python_command = PYTHON3 + " " + PRESUME + "/PRESUME.py "\
-                        "--monitor " + str(2*timelimit)\
-                        + " -L "+str(L)\
-                        + " -f "+"../../../fasta/"+str(esu.id)+".fa"\
-                        + " -d "+str(esu.d)\
-                        + " -s "+str(sigma_origin)\
-                        + " -T "+str(T)\
-                        + " -e "+str(e)\
-                        + " -u "+str(UPPER_LIMIT)\
-                        + " --idANC "+str(esu.id)\
-                        + " --tMorigin "+str(esu.t-esu.d)\
-                        + " --seed " + str(np.random.randint(0, args.r))
+            #     # divide until time point of (2 * timelimit)
+            #     if args.CV:
+            #         python_command = PYTHON3 + " " + PRESUME + "/PRESUME.py "\
+            #             "--monitor " + str(2*timelimit)\
+            #             + " -L "+str(L)\
+            #             + " -f "+"../../../fasta/"+str(esu.id)+".fa"\
+            #             + " -d "+str(esu.d)\
+            #             + " -s "+str(sigma_origin)\
+            #             + " -T "+str(T)\
+            #             + " -e "+str(e)\
+            #             + " -u "+str(UPPER_LIMIT)\
+            #             + " --idANC "+str(esu.id)\
+            #             + " --tMorigin "+str(esu.t-esu.d)\
+            #             + " --CV"\
+            #             + " --seed " + str(np.random.randint(0, args.r))
+            #     else:
+            #         python_command = PYTHON3 + " " + PRESUME + "/PRESUME.py "\
+            #             "--monitor " + str(2*timelimit)\
+            #             + " -L "+str(L)\
+            #             + " -f "+"../../../fasta/"+str(esu.id)+".fa"\
+            #             + " -d "+str(esu.d)\
+            #             + " -s "+str(sigma_origin)\
+            #             + " -T "+str(T)\
+            #             + " -e "+str(e)\
+            #             + " -u "+str(UPPER_LIMIT)\
+            #             + " --idANC "+str(esu.id)\
+            #             + " --tMorigin "+str(esu.t-esu.d)\
+            #             + " --seed " + str(np.random.randint(0, args.r))
 
-                qf.write(python_command)
-                if (args.gtrgamma is not None):
-                    qf.write(" --gtrgamma "+str(args.gtrgamma)+"\n")
-                if (args.constant is not None):
-                    qf.write(" --constant "+str(args.constant)+"\n")
+            #     qf.write(python_command)
+            #     if (args.gtrgamma is not None):
+            #         qf.write(" --gtrgamma "+str(args.gtrgamma)+"\n")
+            #     if (args.constant is not None):
+            #         qf.write(" --constant "+str(args.constant)+"\n")
 
         del(SEQqueue)
         # submit job script to grid engine
