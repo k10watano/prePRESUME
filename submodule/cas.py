@@ -459,15 +459,6 @@ def jobscript_writer(seq, serial_number, args, timelimit):
         .decode('utf-8'))
         .split('\n'))[0]
 
-        # create intermediate file
-        intermediate_file_path = \
-            "intermediate/fasta/{}.fa".\
-            format(str(esu.id))
-        if args.cassiopeia:
-            fasta_writer(esu.id, esu.seq, fasta_file_path, True) 
-        else:
-            seq_writer(esu.id, esu.seq, fasta_file_path, True) 
-
     # create intermediate file
     intermediate_file_name = \
         "intermediate/fasta/{}.seq".\ 
