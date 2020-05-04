@@ -376,18 +376,6 @@ def create_newick(Lineage):
         raise CreateNewickError(e)
 
 
-def fasta_writer(name, seq, file_name, overwrite_mode):
-    if overwrite_mode:
-        writer_mode = "a"
-    else:
-        writer_mode = "w"
-    with open(file_name, writer_mode) as writer:
-        SEQ_seq = SeqRecord(Seq(seq))
-        SEQ_seq.id = str(name)
-        SEQ_seq.description = ""
-        SeqIO.write(SEQ_seq, writer, "fasta")
-
-
 def survey_all_dead_lineages(Lineage):
     try:
         command = "cat intermediate/DOWN/*/all_SEQ_dead.out \
@@ -782,10 +770,24 @@ def PRESUME_CAS(args):
         command = "cat PRESUME.e*.* > intermediate/err; \
                 cat PRESUME.o*.* > intermediate/out; rm PRESUME.*"
         subprocess.call(command, shell=True)
+
+        # processing seq files
         if args.f is None:
             command = "cat intermediate/DOWN/*/PRESUMEout/PRESUMEout.seq \
                     > PRESUMEout.seq"
             subprocess.call(command, shell=True)  # combine fasta
+        
+        # adding header
+        with open("PRESUMEout.seq","r") as f:
+            temp_data = f.readlines()
+        character_items = args.L
+        header = ["name"]
+        for index in range(character_items):
+            header.append("r{}".format(index))
+        header_line="\t".join(header)
+        writedata = [header_line] + temp_data
+        with open("PRESUMEout.seq","2") as f:
+            temp_data = f.readlines(writedata)
 
         fa_count = count_sequence("PRESUMEout.seq")
         tip_count = CombineTrees()  # Combine trees
@@ -797,8 +799,13 @@ def PRESUME_CAS(args):
     else:
         # output initial sequence
         sequence_writer("root", initseq, "root.seq", False)
+
         # output sequences
-        sequences_writer(SEQqueue, "PRESUMEout.seq")
+        if args.n is None:
+            sequences_writer(SEQqueue, "PRESUMEout.seq",True) # expect "Downstream" mode
+        else:
+            sequences_writer(SEQqueue, "PRESUMEout.seq")
+
         # output tree
         tip_count, returned_tree, list_of_dead = create_newick(Lineage)
         # save args
