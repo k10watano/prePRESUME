@@ -721,94 +721,22 @@ def main(timelimit):
 
     # in case of distributed computing
     if (args.qsub):
-        
-        # preparation for qsub
-        os.mkdir("intermediate")
-        os.mkdir("intermediate/DOWN")
-        os.mkdir("intermediate/fasta")
-        os.mkdir("intermediate/shell")
-        PATH = (((
-            subprocess.Popen('echo $PATH', stdout=subprocess.PIPE,
-                             shell=True)
-            .communicate()[0])
-            .decode('utf-8'))
-            .split('\n'))[0]
-
-        LD_LIBRARY_PATH = (((
-            subprocess.Popen('echo $LD_LIBRARY_PATH', stdout=subprocess.PIPE,
-                            shell=True)
-            .communicate()[0])
-            .decode('utf-8'))
-            .split('\n'))[0]
-
         itr = 0
         for esu in SEQqueue:
             itr += 1
             jobscript_writer(esu, itr, args, timelimit)
-            # fasta_file_path = \
-            #     "intermediate/fasta/{}.fa".\
-            #     format(str(esu.id))
-            # fasta_writer(esu.id, esu.seq, fasta_file_path, True)
-
-            # with open("intermediate/shell/esu_"+str(itr)+".sh", 'w') as qf:
-            #     qf.write("#!/bin/bash\n")
-            #     qf.write("#$ -S /bin/bash\n")
-            #     qf.write("#$ -cwd\n")
-            #     qf.write("PATH={}\n".format(PATH))
-            #     qf.write("LD_LIBRARY_PATH={}\n".format(LD_LIBRARY_PATH))
-            #     qf.write("mkdir intermediate/DOWN/esu_"+str(esu.id)+"\n")
-            #     qf.write("cd intermediate/DOWN/esu_"+str(esu.id)+"\n")
-            #     qf.write("pwd\n")
-
-            #     # divide until time point of (2 * timelimit)
-            #     if args.CV:
-            #         python_command = PYTHON3 + " " + PRESUME + "/PRESUME.py "\
-            #             "--monitor " + str(2*timelimit)\
-            #             + " -L "+str(L)\
-            #             + " -f "+"../../../fasta/"+str(esu.id)+".fa"\
-            #             + " -d "+str(esu.d)\
-            #             + " -s "+str(sigma_origin)\
-            #             + " -T "+str(T)\
-            #             + " -e "+str(e)\
-            #             + " -u "+str(UPPER_LIMIT)\
-            #             + " --idANC "+str(esu.id)\
-            #             + " --tMorigin "+str(esu.t-esu.d)\
-            #             + " --CV"\
-            #             + " --seed " + str(np.random.randint(0, args.r))
-            #     else:
-            #         python_command = PYTHON3 + " " + PRESUME + "/PRESUME.py "\
-            #             "--monitor " + str(2*timelimit)\
-            #             + " -L "+str(L)\
-            #             + " -f "+"../../../fasta/"+str(esu.id)+".fa"\
-            #             + " -d "+str(esu.d)\
-            #             + " -s "+str(sigma_origin)\
-            #             + " -T "+str(T)\
-            #             + " -e "+str(e)\
-            #             + " -u "+str(UPPER_LIMIT)\
-            #             + " --idANC "+str(esu.id)\
-            #             + " --tMorigin "+str(esu.t-esu.d)\
-            #             + " --seed " + str(np.random.randint(0, args.r))
-
-            #     qf.write(python_command)
-            #     if (args.gtrgamma is not None):
-            #         qf.write(" --gtrgamma "+str(args.gtrgamma)+"\n")
-            #     if (args.constant is not None):
-            #         qf.write(" --constant "+str(args.constant)+"\n")
-
+        
         del(SEQqueue)
         # submit job script to grid engine
         print("\ncreating bottom trees by qsub ...")
         submit_command = "qsub -l d_rt=1:00:00 -l s_rt=1:00:00 -sync y -t 1-{0} \
             {1}/exe_PRESUME.sh &> intermediate/qsub.out".\
             format(str(itr), PRESUME)
-
         subprocess.call(submit_command, shell=True)
 
         # finalize
-
         # remove extinct downstream lineages
         survey_all_dead_lineages(Lineage)
-
         tip_count, returned_tree, list_of_dead = create_newick(Lineage)
         if args.debug:
             mut_rate_log_writer(mut_rate_log, list_of_dead)

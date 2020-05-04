@@ -1,3 +1,12 @@
 {
-    "python.pythonPath": "/Users/iwatano/anaconda3/bin/python"
+    "python.pythonPath": "/Users/iwatano/anaconda3/bin/python",
+    "sshfs.configs": [
+        {
+            "host": "slogin.hgc.jp",
+            "name": "shirokane",
+            "privateKeyPath": "/Users/iwatano/.ssh/ikaken",
+            "root": "/home/ha5654/",
+            "username": "ha5654"
+        }
+    ]
 }

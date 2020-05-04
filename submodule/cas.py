@@ -468,10 +468,65 @@ def jobscript_writer(seq, serial_number, args, timelimit):
         else:
             seq_writer(esu.id, esu.seq, fasta_file_path, True) 
 
+    # create intermediate file
+    intermediate_file_name = \
+        "intermediate/fasta/{}.seq".\ 
+        format(str(esu.id))
+    sequence_writer(esu.id, esu.seq, intermediate_file_path, True)
+
+    with open("intermediate/shell/esu_"+str(serial_number)+".sh", 'w') as qf:
+        qf.write("#!/bin/bash\n")
+        qf.write("#$ -S /bin/bash\n")
+        qf.write("#$ -cwd\n")
+        qf.write("PATH={}\n".format(PATH))
+        qf.write("LD_LIBRARY_PATH={}\n".format(LD_LIBRARY_PATH))
+        qf.write("mkdir intermediate/DOWN/esu_"+str(esu.id)+"\n")
+        qf.write("cd intermediate/DOWN/esu_"+str(esu.id)+"\n")
+        qf.write("pwd\n")
+
+        # divide until time point of (2 * timelimit)
+        if args.CV:
+            python_command = PYTHON3 + " " + PRESUME + "/PRESUME.py "\
+                "--monitor " + str(2*timelimit)\
+                + " -L "+str(args.L)\
+                + " -f "+"../../../fasta/"+str(esu.id)+".seq"\
+                + " -d "+str(esu.d)\
+                + " -s "+str(args.s)\
+                + " -T "+str(args.T)\
+                + " -e "+str(args.e)\
+                + " -u "+str(args.u)\
+                + " --idANC "+str(esu.id)\
+                + " --tMorigin "+str(esu.t-esu.d)\
+                + " --CV"\
+                + " --seed " + str(np.random.randint(0, args.r))
+                + " --cassiopeia"\
+                + " --probedit " + str(args.probedit)\
+                + " --probdout " + str(args.probdout)\
+                +"\n"
+        else:
+            python_command = PYTHON3 + " " + PRESUME + "/PRESUME.py "\
+                "--monitor " + str(2*timelimit)\
+                + " -L "+str(L)\
+                + " -f "+"../../../fasta/"+str(esu.id)+".seq"\
+                + " -d "+str(esu.d)\
+                + " -s "+str(args.s)\
+                + " -T "+str(args.T)\
+                + " -e "+str(args.e)\
+                + " -u "+str(args.u)\
+                + " --idANC "+str(esu.id)\
+                + " --tMorigin "+str(esu.t-esu.d)\
+                + " --seed " + str(np.random.randint(0, args.r))
+                + " --cassiopeia"\
+                + " --probedit " + str(args.probedit)\
+                + " --probdout " + str(args.probdout)\
+                +"\n"
+
+        qf.write(python_command)
+
+
 def seq_reader(filepath):
     with open(filepath, "r") as reader:
         raw_row=reader.readline()
-    
     sequence = raw_row.split("\t")[1:]
     return sequence
 # main
@@ -513,9 +568,11 @@ def PRESUME_CAS(args):
     os.chdir("PRESUMEout")
 
     # initital sequence specification
-    initseq = [0] * args.L
+    if (args.f is not None):
+        initseq = seq_reader(args.f)
+    else:
+        initseq = [0] * args.L
     
-
     # note: tqdm should be ver. 4.19 (conda install tqdm=4.19)
     if args.bar:
         from tqdm import tqdm
@@ -652,19 +709,53 @@ def PRESUME_CAS(args):
             else:
                 print("Number of generated sequences reached "+str(C))
                 break
+    # in case of distributed computing
+    if args.qsub:
+        itr = 0
+        for esu in SEQqueue:
+            itr += 1
+            jobscript_writer(esu, itr, args, timelimit)
+        
+        del(SEQqueue)
+        # submit job script to grid engine
+        print("\ncreating bottom trees by qsub ...")
+        submit_command = "qsub -l d_rt=1:00:00 -l s_rt=1:00:00 -sync y -t 1-{0} \
+            {1}/exe_PRESUME.sh &> intermediate/qsub.out".\
+            format(str(itr), PRESUME)
+        subprocess.call(submit_command, shell=True)
 
-    # output initial sequence
-    sequence_writer("root", initseq, "root.seq", False)
-    
-    # output sequences
-    sequences_writer(SEQqueue, "PRESUMEout.seq")
-    
-    # output tree
-    tip_count, returned_tree, list_of_dead = create_newick(Lineage)
+        # finalize
+        # remove extinct downstream lineages
+        survey_all_dead_lineages(Lineage)
+        tip_count, returned_tree, list_of_dead = create_newick(Lineage)
+        if args.debug:
+            mut_rate_log_writer(mut_rate_log, list_of_dead)
 
-    # save args
-    if args.save:
-        argument_saver(args)
+        command = "cat PRESUME.e*.* > intermediate/err; \
+                cat PRESUME.o*.* > intermediate/out; rm PRESUME.*"
+        subprocess.call(command, shell=True)
+        if args.f is None:
+            command = "cat intermediate/DOWN/*/PRESUMEout/PRESUMEout.fa \
+                    > PRESUMEout.fa"
+            subprocess.call(command, shell=True)  # combine fasta
+
+        fa_count = count_sequence("PRESUMEout.fa")
+        tip_count = CombineTrees()  # Combine trees
+        shutil.move("PRESUMEout.nwk", "intermediate")
+        os.rename("PRESUMEout_combined.nwk", "PRESUMEout.nwk")
+        if (not args.debug):
+            shutil.rmtree("intermediate")
+
+    else:
+        # output initial sequence
+        sequence_writer("root", initseq, "root.seq", False)
+        # output sequences
+        sequences_writer(SEQqueue, "PRESUMEout.seq")
+        # output tree
+        tip_count, returned_tree, list_of_dead = create_newick(Lineage)
+        # save args
+        if args.save:
+            argument_saver(args)
     
     print("=====================================================")
     print("Simulation end time point:         "+str(2*timelimit))
