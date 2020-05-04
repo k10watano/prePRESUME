@@ -489,7 +489,7 @@ def jobscript_writer(seq, serial_number, args, timelimit):
                 + " --idANC "+str(esu.id)\
                 + " --tMorigin "+str(esu.t-esu.d)\
                 + " --CV"\
-                + " --seed " + str(np.random.randint(0, args.r))
+                + " --seed " + str(np.random.randint(0, args.r))\
                 + " --cassiopeia"\
                 + " --probedit " + str(args.probedit)\
                 + " --probdout " + str(args.probdout)\
@@ -506,7 +506,7 @@ def jobscript_writer(seq, serial_number, args, timelimit):
                 + " -u "+str(args.u)\
                 + " --idANC "+str(esu.id)\
                 + " --tMorigin "+str(esu.t-esu.d)\
-                + " --seed " + str(np.random.randint(0, args.r))
+                + " --seed " + str(np.random.randint(0, args.r))\
                 + " --cassiopeia"\
                 + " --probedit " + str(args.probedit)\
                 + " --probdout " + str(args.probdout)\
