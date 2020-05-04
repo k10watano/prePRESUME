@@ -350,7 +350,7 @@ def create_newick(Lineage):
         # the name of terminals is <upstream id>_<downstream id>
         if (idANC is not None):
             for clade in tree.get_terminals():
-                clade_name_prefix = str(hex(args.idANC)).split("x")[1]
+                clade_name_prefix = str(hex(idANC)).split("x")[1]
                 clade_name_suffix = str(hex(int(clade.name))).split("x")[1]
                 new_clade_name = "{0}_{1}". \
                     format(clade_name_prefix, clade_name_suffix)
@@ -367,7 +367,7 @@ def create_newick(Lineage):
 
         else:
             # file write in case of downstream lineage
-            Phylo.write(tree, "SEQ_"+str(args.idANC)+".nwk", 'newick')
+            Phylo.write(tree, "SEQ_"+str(idANC)+".nwk", 'newick')
         
         return len(tree.get_terminals()), tree, list_of_dead
 
