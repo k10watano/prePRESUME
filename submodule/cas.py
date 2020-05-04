@@ -492,7 +492,7 @@ def sequences_writer(list_of_sequence, file_name, no_header=False):
             line = '\t'.join(data)
             writer.writelines(line)
 
-def jobscript_writer(seq, serial_number, args, timelimit):
+def jobscript_writer(esu, serial_number, args, timelimit):
     PATH = (((
         subprocess.Popen('echo $PATH', stdout=subprocess.PIPE,
                             shell=True)
