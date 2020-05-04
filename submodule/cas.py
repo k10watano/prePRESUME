@@ -786,7 +786,7 @@ def PRESUME_CAS(args):
             header.append("r{}".format(index))
         header_line="\t".join(header)
         writedata = [header_line] + temp_data
-        with open("PRESUMEout.seq","2") as f:
+        with open("PRESUMEout.seq","r") as f:
             temp_data = f.readlines(writedata)
 
         fa_count = count_sequence("PRESUMEout.seq")
