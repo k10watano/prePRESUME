@@ -998,7 +998,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--cassiopeir",
+        "--cassiopeia",
         help="using cassiopeir-model",
         action='store_true',
         default=False
