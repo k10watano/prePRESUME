@@ -1,4 +1,4 @@
- #!/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 __version__ = "1.0.0"
 
@@ -7,37 +7,24 @@ __author__ = "\
             Naoki Konno <naoki@bs.s.u-tokyo.ac.jp>, \
             Nozomu Yachie <nzmyachie@gmail.com>"
 
-__date__ = "2020/1/12"
-
+__date__ = "2020/3/29"
+import subprocess
 import random
 import numpy as np
-import sys
-import os
 from Bio import Phylo
-from Bio import SeqIO
-from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
+import code
+import sys
 import argparse
-import subprocess
-import shutil
+import pickle
+import os
+import time
 import re
-import csv
 
-LOGO = '''
-######     ######     #######     #####     #     #    #     #    #######
-#     #    #     #    #          #     #    #     #    ##   ##    #
-#     #    #     #    #          #          #     #    # # # #    #
-######     ######     #####       #####     #     #    #  #  #    #####
-#          #   #      #                #    #     #    #     #    #
-#          #    #     #          #     #    #     #    #     #    #
-#          #     #    #######     #####      #####     #     #    #######
-
-Version:     1.0.0
-Last update: April 24, 2020
-GitHub:      https://github.com/yachielab/PRESUME
+LOGO='''
+DEBUG MODE of PRESUME
+feat. cassiopeia-model
+github: https://github.com/yachielab/PRESUME
 '''
-
-# set environment
 
 # absolute path of python3 directory
 PYTHON3 = (((
@@ -179,8 +166,8 @@ class SEQ():
                 self.d = 1/self.r
 
             self.t = tM + self.d  # time t of doubling of this SEQ
-            self.seq = self.daughterseq(str(mseq), dM)
-            self.mutation_rate = compare_sequences(str(mseq), self.seq)
+            self.seq = CAS_like_replication(mseq)
+            # self.mutation_rate = compare_sequences(str(mseq), self.seq)
 
     def growing_rate_dist(self, mu, sigma):
         growing_rate = np.random.normal(mu, sigma)
@@ -190,40 +177,26 @@ class SEQ():
 
     # receive mother SEQ sequence, introduce mutations,
     # return daughter sequence.
-    def daughterseq(self, seq, dM):
-        dseq = ""
+    def daughterseq(self, seq):
+        dseq = []
         for i in range(L):
-            if(args.constant is not None):
-                dseq = dseq + self.time_independent_mutation(seq[i], mu[i])
-            if(args.gtrgamma is not None):
-                dseq = dseq+self.time_dependent_mutation(seq[i], gamma[i], dM)
+            dseq = dseq + "A"
         return dseq
 
-    # mutation of a site (NOT Jukes Cantor model.
-    # directly define mutation matrix, not the mutation rate matrix
-    # it's enough for calculate mutation of each duplication
-    def time_independent_mutation(self, c, mu):
-        base = {'A': 0, 'C': 1, 'G': 2, 'T': 3}
-        matrix = [
-            [1-mu, mu/3, mu/3, mu/3],
-            [mu/3, 1-mu, mu/3, mu/3],
-            [mu/3, mu/3, 1-mu, mu/3],
-            [mu/3, mu/3, mu/3, 1-mu]
-            ]
-        return random.choices(
-            ['A', 'C', 'G', 'T'], k=1, weights=matrix[base[c]]
-            )[0]
-
-    # mutation of a site (GTR-Gamma model)
-    def time_dependent_mutation(self, c, gamma, dM):
-        base = {'A': 0, 'C': 1, 'G': 2, 'T': 3}
-        matrix = P(dM, gamma)
-
-        # np.matrix[x] returns matrix, then the matrix is converted to array()
-        return random.choices(
-            ['A', 'C', 'G', 'T'], k=1, weights=np.array(matrix[base[c]])[0]
-            )[0]
-
+def CAS_like_replication(sequence):
+    daughter = []
+    for character in sequence:
+        occur_mutation = np.random.choice(a=[True, False], p=[prob_of_edit, 1 - prob_of_edit])
+        if character == 0 and occur_mutation:
+            newcharacter = np.random.randint(1, state)
+        else:
+            newcharacter = character
+            
+        occur_dropout = np.random.choice(a=[True, False], p=[prob_of_dropout, 1 - prob_of_dropout])
+        if occur_dropout:
+            newcharacter = -1       
+        daughter.append(newcharacter)
+    return daughter
 
 def compare_sequences(motherseq, myseq):
     if len(motherseq) != len(myseq):
@@ -330,7 +303,7 @@ def create_newick(Lineage):
 
         # only in downstream tree of distributed computing,
         # the name of terminals is <upstream id>_<downstream id>
-        if (args.idANC is not None):
+        if (idANC is not None):
             for clade in tree.get_terminals():
                 clade_name_prefix = str(hex(args.idANC)).split("x")[1]
                 clade_name_suffix = str(hex(int(clade.name))).split("x")[1]
@@ -344,7 +317,7 @@ def create_newick(Lineage):
             return
 
         # file write in default
-        if (args.idANC is None):
+        if (idANC is None):
             Phylo.write(tree, "PRESUMEout.nwk", 'newick')
 
         else:
@@ -425,65 +398,99 @@ def progress_bar(pbar, current_value):
     pbar.refresh()
 
 
-def mut_rate_log_writer(L_dict, dead_lst):
-    event = len(L_dict)
-    seq_length = len(L_dict[next(iter(L_dict))])
-    mutation_counter = np.zeros(seq_length)
-    list_of_death=dead_lst
-    for name in L_dict.keys():
-        if name not in list_of_death:
-            score = np.array(L_dict[name])
-            mutation_counter += score
+def sequence_writer(name, seq, file_name, overwrite_mode):
+    data = [str(name)]
+    for character in seq:
+        data.append(str(character))
 
-    print("[DEBUG]dead sequences:", len(dead_lst))
-    print("[DEBUG]event:", event)
-    print("[DEBUG]seq_length:", seq_length)
-
-    with open("mut_rate_log.csv", "w") as f:
-        csvout = csv.writer(f)
-        csvout.writerow(["position", "mutation_rate"])
-        for idx, item in enumerate(mutation_counter):
-            csvout.writerow([idx+1, item])
-
-
-def unbalance(clade):
-    if len(clade.clades) == 2:
-        child1 = len(
-            list(Phylo.BaseTree.Tree(clade.clades[0]).get_terminals())
-            )
-        child2 = len(
-            list(Phylo.BaseTree.Tree(clade.clades[1]).get_terminals())
-            )
-        return min(child1, child2)/max(child1, child2)
+    if overwrite_mode:
+        writer_mode = "a"
     else:
-        return 0
+        writer_mode = "w"
+    with open(file_name, writer_mode) as writer:
+        line = "\t".join(data)
+        writer.writelines(line)
 
 
-def Um_analyzer(tree):
-    quene = [tree.clade]
-    list_of_u = []  # Um
-    while(quene != []):
-        m_clade = quene.pop()
-        if len(Phylo.BaseTree.Tree(m_clade).get_terminals()) > 10:
-            Um = unbalance(m_clade)
-            list_of_u.append(Um)
-            quene.extend(m_clade.clades)
-    return list_of_u
+def sequences_writer(list_of_sequence, file_name, no_header=False):
 
+    # writedata = [
+    # [name, character_1, character_2, ..., character_n] # header row
+    # [name, 0, 0, ..., 0] # data row
+    # ...
+    # ]
+    writedata = []
+
+    # generate header row
+    if not no_header:
+        character_items = len(list_of_sequence[0].seq)
+        header = ["name"]
+        for index in range(character_items):
+            header.append("r{}".format(index))
+        header.append("\n")
+        writedata.append(header)
+
+    # generate data row
+    for sequence in list_of_sequence:
+        name = str(sequence.id)
+        seq = sequence.seq
+        entry = [name]
+        for character in seq:
+            entry.append(str(character))
+        entry.append("\n")
+        writedata.append(entry)
+
+    with open(file_name, "w") as writer:
+        for data in writedata:
+            line = '\t'.join(data)
+            writer.writelines(line)
 
 # main
-def main(timelimit):
+def PRESUME_CAS(args):
     '''
     main function
             commandline argument: "python3 PRESUME.py <timelimit> <options...>"
     '''
+    global alpha, e, idANC, state, prob_of_edit, prob_of_dropout
+    state = args.state
+    prob_of_edit = args.probedit
+    prob_of_dropout = args.probdout
+    dorigin = args.d
+    alpha = args.a
+    growing_rate_origin = 1 / args.d
+    sigma_origin = args.s
+    T = args.T
+    e = args.e
+    idANC = args.idANC
+    timelimit = args.monitor
+
+    # initialize the pseudo-random number generator
+    if args.seed is not None:
+        seed = args.seed
+    elif args.seed == "rand":
+        seed = np.random.randint(0, args.r)
+    elif args.seed is None:
+        seed = 0
+    else:
+        seed = int(args.seed)
+    np.random.seed(int(seed))
+    
+    # setup directory
+    OUTDIR = args.output
+    if not os.path.exists(OUTDIR):
+        os.makedirs(OUTDIR)
+    os.chdir(OUTDIR)
+    os.makedirs("PRESUMEout", exist_ok=True)
+    os.chdir("PRESUMEout")
+
+    # initital sequence specification
+    initseq = [0] * args.L
+    
+
     # note: tqdm should be ver. 4.19 (conda install tqdm=4.19)
     if args.bar:
         from tqdm import tqdm
     C = args.n  # C : number of SEQs you want to get (default == None)
-    if(C is not None):  # if C is specified
-        if(args.qsub):  # for distributed computing
-            C = int(C**(1/2))  # update C
 
     if args.bar:
         pbar = tqdm(range(C))
@@ -553,7 +560,7 @@ def main(timelimit):
                 esu = SEQqueue.pop(k)
                 # save ancestoral sequences
                 if args.viewANC:
-                    fasta_writer(esu.id, esu.seq, "ancestoral_sequences.fasta", True)
+                    sequence_writer(esu.id, esu.seq, "ancestoral_sequences.seq", True)
                 # duplication
                 if args.CV:
                     daughter = [SEQ(i, esu.id, esu.seq, esu.CV,
@@ -618,150 +625,18 @@ def main(timelimit):
                 break
 
     # output initial sequence
-    fasta_writer("root", initseq, "root.fa", False)
+    sequence_writer("root", initseq, "root.seq", False)
+    
+    # output sequences
+    sequences_writer(SEQqueue, "PRESUMEout.seq")
+    
+    # output tree
+    tip_count, returned_tree, list_of_dead = create_newick(Lineage)
 
-    # in case of "sequential computing"
-    # or "downstream SEQ simulation of distributed computing"
-    if(not args.qsub):
-        # create fasta
-        print("Generating a FASTA file...")
-        for esu in SEQqueue:
-            if(args.idANC is None):
-                esu_name = str(esu.id)
-            else:
-                esu_name_prefix = str(hex(args.idANC)).split("x")[1]
-                esu_name_suffix = str(hex(esu.id)).split("x")[1]
-                new_esu_name = "{}_{}".\
-                    format(esu_name_prefix, esu_name_suffix)
-                esu_name = new_esu_name
-            fasta_writer(esu_name, esu.seq, "PRESUMEout.fa", True)
-
-        fa_count = count_sequence("PRESUMEout.fa")
-
-        # create newick
-        del(SEQqueue)
-        print("Generating a Newick file......")
-        tip_count, returned_tree, list_of_dead = create_newick(Lineage)
-
-        if args.debug:
-            mut_rate_log_writer(mut_rate_log, list_of_dead)
-
-    # in case of distributed computing
-    if (args.qsub):
-        # preparation for qsub
-        os.mkdir("intermediate")
-        os.mkdir("intermediate/DOWN")
-        os.mkdir("intermediate/fasta")
-        os.mkdir("intermediate/shell")
-        PATH = (((
-            subprocess.Popen('echo $PATH', stdout=subprocess.PIPE,
-                             shell=True)
-            .communicate()[0])
-            .decode('utf-8'))
-            .split('\n'))[0]
-
-        LD_LIBRARY_PATH = (((
-            subprocess.Popen('echo $LD_LIBRARY_PATH', stdout=subprocess.PIPE,
-                            shell=True)
-            .communicate()[0])
-            .decode('utf-8'))
-            .split('\n'))[0]
-
-        itr = 0
-        for esu in SEQqueue:
-            itr += 1
-            fasta_file_path = \
-                "intermediate/fasta/{}.fa".\
-                format(str(esu.id))
-            fasta_writer(esu.id, esu.seq, fasta_file_path, True)
-
-            with open("intermediate/shell/esu_"+str(itr)+".sh", 'w') as qf:
-                qf.write("#!/bin/bash\n")
-                qf.write("#$ -S /bin/bash\n")
-                qf.write("#$ -cwd\n")
-                qf.write("PATH={}\n".format(PATH))
-                qf.write("LD_LIBRARY_PATH={}\n".format(LD_LIBRARY_PATH))
-                qf.write("mkdir intermediate/DOWN/esu_"+str(esu.id)+"\n")
-                qf.write("cd intermediate/DOWN/esu_"+str(esu.id)+"\n")
-                qf.write("pwd\n")
-
-                # divide until time point of (2 * timelimit)
-                if args.CV:
-                    python_command = PYTHON3 + " " + PRESUME + "/PRESUME.py "\
-                        "--monitor " + str(2*timelimit)\
-                        + " -L "+str(L)\
-                        + " -f "+"../../../fasta/"+str(esu.id)+".fa"\
-                        + " -d "+str(esu.d)\
-                        + " -s "+str(sigma_origin)\
-                        + " -T "+str(T)\
-                        + " -e "+str(e)\
-                        + " -u "+str(UPPER_LIMIT)\
-                        + " --idANC "+str(esu.id)\
-                        + " --tMorigin "+str(esu.t-esu.d)\
-                        + " --CV"\
-                        + " --seed " + str(np.random.randint(0, args.r))
-                else:
-                    python_command = PYTHON3 + " " + PRESUME + "/PRESUME.py "\
-                        "--monitor " + str(2*timelimit)\
-                        + " -L "+str(L)\
-                        + " -f "+"../../../fasta/"+str(esu.id)+".fa"\
-                        + " -d "+str(esu.d)\
-                        + " -s "+str(sigma_origin)\
-                        + " -T "+str(T)\
-                        + " -e "+str(e)\
-                        + " -u "+str(UPPER_LIMIT)\
-                        + " --idANC "+str(esu.id)\
-                        + " --tMorigin "+str(esu.t-esu.d)\
-                        + " --seed " + str(np.random.randint(0, args.r))
-
-                qf.write(python_command)
-                if (args.gtrgamma is not None):
-                    qf.write(" --gtrgamma "+str(args.gtrgamma)+"\n")
-                if (args.constant is not None):
-                    qf.write(" --constant "+str(args.constant)+"\n")
-
-        del(SEQqueue)
-        # submit job script to grid engine
-        print("\ncreating bottom trees by qsub ...")
-        submit_command = "qsub -l d_rt=1:00:00 -l s_rt=1:00:00 -sync y -t 1-{0} \
-            {1}/exe_PRESUME.sh &> intermediate/qsub.out".\
-            format(str(itr), PRESUME)
-
-        subprocess.call(submit_command, shell=True)
-
-        # finalize
-
-        # remove extinct downstream lineages
-        survey_all_dead_lineages(Lineage)
-
-        tip_count, returned_tree, list_of_dead = create_newick(Lineage)
-        if args.debug:
-            mut_rate_log_writer(mut_rate_log, list_of_dead)
-
-        command = "cat PRESUME.e*.* > intermediate/err; \
-                cat PRESUME.o*.* > intermediate/out; rm PRESUME.*"
-        subprocess.call(command, shell=True)
-        if args.f is None:
-            command = "cat intermediate/DOWN/*/PRESUMEout/PRESUMEout.fa \
-                    > PRESUMEout.fa"
-            subprocess.call(command, shell=True)  # combine fasta
-
-        fa_count = count_sequence("PRESUMEout.fa")
-        tip_count = CombineTrees()  # Combine trees
-        shutil.move("PRESUMEout.nwk", "intermediate")
-        os.rename("PRESUMEout_combined.nwk", "PRESUMEout.nwk")
-        if (not args.debug):
-            shutil.rmtree("intermediate")
-
-    # error check
-    if(fa_count != tip_count):
-        raise OutputError(fa_count, tip_count)
-        return 0
-
-    # finish
+    # save args
     if args.save:
         argument_saver(args)
-
+    
     print("=====================================================")
     print("Simulation end time point:         "+str(2*timelimit))
     print("Number of generated sequences:     "+str(tip_count))
@@ -782,20 +657,8 @@ def recursive_main(timelimit, limit, main_func, repeated=1):
 
 #   interface
 if __name__ == "__main__":
-    # interface
+    ######## processing some args ########
     parser = argparse.ArgumentParser(description='PRESUME.py', add_help=False)
-    parser.add_argument(
-        "--param",
-        help="load argument file(csv file)",
-        type=str
-        )
-    parser.add_argument(
-        "-V",
-        "--version",
-        action="store_true",
-        default=False
-        )
-
     parser.add_argument(
         "--monitor",
         help="time limit (default=1)",
@@ -816,13 +679,6 @@ if __name__ == "__main__":
         help="length of sequence (default=1000)",
         type=int,
         default=1000
-        )
-
-    parser.add_argument(
-        "-f",
-        help="fasta file name　of the common ancestor sequence.\
-            (default: poly-C)",
-        type=str
         )
 
     parser.add_argument(
@@ -860,20 +716,6 @@ if __name__ == "__main__":
         )
 
     parser.add_argument(
-        "--gtrgamma",
-        help="parameters for substitution rate matrix\n \
-            GTR{A-C/A-G/A-T/C-G/C-T/G-T} \
-            +FU{piA/piC/piG/piT} \
-            +G4{shape of gamma distribution}\n \
-            Or, you can use default parameters by \"--gtrgamma default\"\n \
-            default: \
-            GTR{0.3333/0.3333/0.3333/0.3333/0.3333/0.3333} \
-            +FU{0.25/0.25/0.25/0.25} \
-            +G4{10000}",
-        type=str
-        )
-
-    parser.add_argument(
         "-u",
         help="upper limit of number of sequences (default=2^20)",
         type=int,
@@ -881,49 +723,10 @@ if __name__ == "__main__":
         )
 
     parser.add_argument(
-        "-m",
-        help="mean of relative  \
-        titution rate according to gamma distribution \
-            (default=1)",
-        type=float,
-        default=1
-        )
-
-    parser.add_argument(
-        "--constant",
-        help="fixed mutation rate of each site (default=None)",
-        type=float)
-
-    parser.add_argument(
         "--output",
         help="output folder (default:current directory)",
         type=str,
         default=os.getcwd()
-        )
-
-    # for distributed computing
-    parser.add_argument(
-        "--qsub",
-        help="activate preparation for distributed processes\
-            (defalt=inactivated)",
-        action="store_true",
-        default=False
-        )
-
-    # for distributed computing
-    parser.add_argument(
-        "--idANC",
-        help="corresponging ancestral sequence (in upstream tree), \
-            in case of distributed computing (default=None)",
-        type=int
-        )
-
-    # for distributed computing
-    parser.add_argument(
-        "--tMorigin",
-        help="birth time of origin sequence",
-        type=float,
-        default=0
         )
 
     parser.add_argument(
@@ -977,31 +780,17 @@ if __name__ == "__main__":
         )
 
     parser.add_argument(
-        "-h", "--help",
-        help="print help document",
-        action='store_true',
-        default=False
+        "--tMorigin",
+        help="birth time of origin sequence",
+        type=float,
+        default=0
         )
 
     parser.add_argument(
-        "--polyC",
-        help="use polyC sequence as root ",
-        action='store_true',
-        default=False
-        )
-
-    parser.add_argument(
-        "--tree",
-        help="file name of a guide tree in Newick format(for debug, unsupported.)",
-        type=str,
-        default=None,
-    )
-
-    parser.add_argument(
-        "--cassiopeia",
-        help="using cassiopeia-model",
-        action='store_true',
-        default=False
+        "--idANC",
+        help="corresponging ancestral sequence (in upstream tree), \
+            in case of distributed computing (default=None)",
+        type=int
         )
 
     parser.add_argument(
@@ -1026,176 +815,6 @@ if __name__ == "__main__":
         )
 
     args = parser.parse_args()
-    
-    # "Code Ocean" specific process
-    # if args.qsub:
-    #     raise ExceptionOfCodeOcenan
-    #     quit()
-    
-    #   to show help
-    if args.help:
-        import PRESUME_help as ph
-        print(ph.help_description())
-        exit()
 
-    if args.version:
-        print(LOGO)
-        exit()
-
-    if args.cassiopeia:
-        import submodule.cas as cas
-        cas.PRESUME_CAS(args)
-        exit()
-
-    if args.tree:
-        import submodule.nwk2fa as n2f
-        n2f.PRESUME_nwk2fa(args)
-        exit()
-    
-    # read argument from input CSV
-    if args.param:
-        with open(args.param, "rt") as fin:
-            cin = csv.reader(fin)
-            arglist = [row for row in cin]
-            valid_format = len(arglist[0]) == len(arglist[1])
-            if not valid_format:
-                print("ERROR:invalid format!")
-                quit()
-            for position in range(len(arglist[0])):
-                if len(arglist[1][position].split('.')) != 1:
-                    loaded_arg = float(arglist[1][position])
-                    args.__dict__[arglist[0][position]] = loaded_arg
-                elif arglist[1][position] in ["True", "False"]:
-                    if arglist[1][position] == "True":
-                        args.__dict__[arglist[0][position]] = True
-                    else:
-                        args.__dict__[arglist[0][position]] = False
-                elif len(arglist[1][position].split('/')) != 1:
-                    loaded_arg = str(arglist[1][position])
-                    args.__dict__[arglist[0][position]] = loaded_arg
-                else:
-                    loaded_arg = int(arglist[1][position])
-                    args.__dict__[arglist[0][position]] = loaded_arg
-            print("CSV loaded!")
-
-    # --gamma xor --constant should be specified
-    if(args.gtrgamma is None and args.constant is None):
-        print("please specify --gtrgamma or --constant")
-        sys.exit(1)
-    if(args.gtrgamma is not None and args.constant is not None):
-        print("please don't specify both --gtrgamma and --constant")
-        sys.exit(1)
-
-    # initialize the pseudo-random number generator
-    if args.seed is not None:
-        seed = args.seed
-    elif args.seed == "rand":
-        seed = np.random.randint(0, args.r)
-    elif args.seed is None:
-        seed = 0
-    else:
-        seed = int(args.seed)
-    np.random.seed(int(seed))
-
-    # setup directory
-    OUTDIR = args.output
-    if not os.path.exists(OUTDIR):
-        os.makedirs(OUTDIR)
-    os.chdir(OUTDIR)
-    os.makedirs("PRESUMEout", exist_ok=True)
-    os.chdir("PRESUMEout")
-
-    # parameters###### (corresponding to the Figure.2a)
-    L = args.L
-    dorigin = args.d
-    if dorigin == 0:
-        print("fatal error: doubling time of initial SEQ is 0!")
-        sys.exit(1)
-
-    growing_rate_origin = 1 / args.d
-    sigma_origin = args.s
-    alpha = args.a
-    T = args.T
-    e = args.e
-    m = args.m
-
-    # In case expected number of mutation is independent
-    # on the doubling time of the SEQ
-    if(args.constant is not None):
-        mu = [args.constant] * L
-
-    # substitution rate matrix (GTR-Gamma model)
-    # -> define substitution matrix function
-    if(args.gtrgamma is not None):
-        if(args.gtrgamma == "default"):
-            model = "GTR{0.03333/0.03333/0.03333/0.03333/0.03333/0.03333} \
-            +FU{0.25/0.25/0.25/0.25} \
-            +G4{10000}"
-        else:
-            model = args.gtrgamma
-        models_str = str(model).split("+")
-        abcdef = (models_str[0].split("{"))[1].split("}")[0].split("/")
-        piACGT = (models_str[1].split("{"))[1].split("}")[0].split("/")
-        gamma_str = (models_str[2].split("{"))[1].split("}")[0].split("/")
-        a1 = float(abcdef[0])  # A <-> C
-        a2 = float(abcdef[1])  # A <-> G
-        a3 = float(abcdef[2])  # A <-> T
-        a4 = float(abcdef[3])  # C <-> G
-        a5 = float(abcdef[4])  # C <-> T
-        a6 = float(abcdef[5])  # G <-> T
-        piA = float(piACGT[0])
-        piC = float(piACGT[1])
-        piG = float(piACGT[2])
-        piT = float(piACGT[3])
-        if (abs(piA+piC+piG+piT-1) > 0.001):
-            print("error piA+piC+piG+piT not equal to 1!")
-            sys.exit(1)
-        # substitution rate matrix
-        R = np.matrix([
-            [-(a1*piC+a2*piG+a3*piT), a1*piC, a2*piG, a3*piT],
-            [a1*piA, -(a1*piA+a4*piG+a5*piT), a4*piG, a5*piT],
-            [a2*piA, a4*piC, -(a2*piA+a4*piC+a6*piT), a6*piT],
-            [a3*piA, a5*piC, a6*piG, -(a3*piA+a5*piC+a6*piG)]])
-        print("Substitution rate matrix:")
-        print(R)
-        # Al: eigen values (np.array),
-        # U: eigen vectors matrix :
-        # R = U * diag(Al) * U^(-1)
-        Al, U = np.linalg.eig(R)
-
-        # return transition matrix
-        def P(t, gamma):
-            exp_rambda = np.diag(
-                    np.array([
-                        np.exp(Al[0] * t * gamma),
-                        np.exp(Al[1] * t * gamma),
-                        np.exp(Al[2] * t * gamma),
-                        np.exp(Al[3] * t * gamma)]
-                    )
-                )
-            return np.dot(np.dot(U, exp_rambda), np.linalg.inv(U))
-        # model of site heterogeneity:
-        # calculate relative substitution rate gamma for each site
-        shape = float(gamma_str[0])  # shape of gamma distribution
-        gamma = np.random.gamma(shape, m / shape, L)  # mean is args.m
-
-    # initial sequence specification
-    if (args.f is not None):
-        with open(args.f, 'r') as handle:
-            sequences = SeqIO.parse(handle, 'fasta')
-            initseq = str(list(sequences)[0].seq)
-            L = len(initseq)
-    elif (args.polyC):
-        initseq = 'C' * L  # initial sequence
-    else:
-        initseq = ''.join([
-            np.random.choice(['A', 'G', 'C', 'T']) for i in range(L)
-            ])
-
-    #   excecute main
-    print(LOGO)
-    if args.r == 1:
-        return_main = main(args.monitor)
-    else:
-        counter = recursive_main(args.monitor, args.r, main)
-#         print("Number of retrials:", counter)
+    # start simulation
+    PRESUME_CAS(args)
