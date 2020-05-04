@@ -21,6 +21,54 @@ import time
 import re
 
 LOGO='''
+                               ....((++++++(-....
+                         ..(zluggggHMHMMMMMNHmggezzO+..
+                      .(<u&kMMHHHH@HMWWMHHHHHHHHHMMMNgsrO(.
+                   ._(JMMHHH@H@@H@@`.MMQ@H@@H@@M"4HHHHHMNayz&,`    `    `    `
+                 ..JMMH@H@H@HHH@HH] MHH@HH@HHM".b,H@@H@HHHMMNyzi.
+              .-(MMHH@HH@HH@MHHH@HHa..(.HHHM".ma,.H@HH@H@@HHHMNmzn.  `    `
+    `       .((MH@H@HH@HH@HbJH@H@H@HH@HH@@H@H@HHN.MHH@HHb.a,4HHHMmun.        `
+       ` `.(jMH@HH@H@H@H@HHM+MH@HH@H@HH@HH@HH@H@HH@H@HPHH,?HH@H@HHMmzi
+  `      (jdHH@H@HH@H@HH@H@HHH@HMHH@HH@HH@HH@H@H@HH@H@M+?".H@H@H@@HMNyw.  `
+       .?dMHH@HH@H@HHH@HH@H@H/M#J#J@J#W@HH@HH@HH@H@HHHHHH@HHH@HMYYMHHMmz,    `
+      .=qMH@H@HHH@H@H@H@HH@H@},NjbJCd1H8jMMH@HH@HH@H@H@H@H@HM4Hb.N,W@HMRz>
+    `.ldMH@H@H@@HH@HH@HH@HH@H) ,H@HH#dhd6j#WH@HH@HH@H@H@HH@HM,WN HNHH@HM#v>
+    .lqMH@HHHHH@HH@HH@HH@HH@H)  (HM=.H@HBudYWH@H@H@HHH@HH@H@H@m(d@H@HH@HMKr- `
+ `  zAMH@H@@H@HH@HH@HH@HMY"WH\   _  HHHHMAdHYMH@HH@H@HH@HH@HHH@HH@HH@HH@HMsO.
+   ,tMHHH@HH@H@H@H@H@H@HH@h,             ..dMMHH@HH@H@H@H@HH@HH@HHY"! ,HHHNtl
+   rdMH@HHH@HHH@H@HH@HH@HMY=         ..gHMkQgg@HH@HH@H@HH@H@H@HHN.gHHH@H@@MKl.
+  ,tdH@H@H@H@H@HHH@HHMY"`            TMH@#SQg+H@HH@HH@HH@HHH@H@H@HH@HHH@HHHN={
+  (OMHH@H@HH@HH@H@HH+(JxzgQHH!     .+..7MYHaJdHH@H@H@HH@H@H@HH@HH@HH@@HH@HHMz<
+  ldM@HH@HH@H@HH@H@HHmgW9dHHF.JN.` ,HHMMZWm&dH@HH@H@HH@HH@HH@HH@HH#=~..7MH@MR=
+  ldHH@HH@HH@H@HH@H@H@ag9udWjMHHN. ,M#WeTmJWH@H@HH@HH@H@HH@H@H@H@M dH@Hb,HHMb=
+  =dHH@H@H@HH@H@HH@HHH@QM5j#j#dBMh ,rWpdmJH@HH@H@HH@HH@H@HH@HH@HH@o?WMY^.H@MDl
+  1zMHH@HH@HH@HH@HH@H@HHMHMuM1Hj@Jh,MxMNHH@H@HH@H@H@H@HH@H@HH@HH@HHNgJ+HH@HM0z
+  (?M@HH@HH@HH@HH@H@HH@HH@HHMHNdNJHNHHH@HH@HH@HH@HHH@HH@HH@H@H@HH@HH@HH@HH@Mz>
+  .>dH@H@H@H@H@H@H@H@HH@HH@HH@HHHH@HH@HH@HH@HH@HH@H@HH@H@HH@HH@H@MH@HH@H@HH#l:
+   <?MH@HH@HH@HH@HH@H@HH@H@H@H@H@HH@H@H@HMMMMHWYY9YYYTTTTXQgHMHHM...7YMH@HM6v
+   .>dHH@HH@HH@HH@HH@H@HH@HHHMMHY9Y71<;;;;;;;;;++++gQHHHHH@HHH@HHH#.M[.HHH#l:
+    (;MH@H@H@H@H@H@HHMHYYT1;;;;;;;:;;;;+j+ggHH@HHHHHHH@H@HH@H@H@H@b?".H@HMO<
+     <?MHHH@HHMH9YC;;;;;;;;:;;;+jjggMH@HH@HH@HH@@H@@H@H@H@HH@HH@HH@HH@HHM6<`
+      <?MYYC<;;;;;;;;:;;<jjggMHH@HH@HH@H@H@HH@HH@HH@HH@HH@H@#^7MH@H@HH@M6<`
+       <?z;;:;;;;;<jjgHH@HH@HH@HH@H@H@HHH@H@H@H@HH@H@HH@HH@Y.MN (WHH@HM=~`
+        ~:1;;jjgHHH@HH@HH@HH@H@H@H@HH@H@HH@HHH@HH@HH@H@H@HHH@P.MF.H@M#!_
+         -:?MHH@H@HH@HH@HH@HH@H@HH@HHH@H@HH@H@HH@H@HH@MH@H@HH@HLdH@M5`       `
+           ~:THH@H@H@H@H@H@H@HHH@HH@@HH@H@HH@H@HH@H@HM,,MH@HH@HHHMD_
+             ~<THHH@HHH@H@HH@H@HH@HH@HH@HH@HH@H@H=HH@HHx.WH@HH@H9~_
+    `          ~:7MH@H@HHH@HH@H@H@HH@H@HH@H@Y7MM9.@HH@H@b.MHHM5_~`      `    `
+                 _<?TMH@H@H@HH@H@H@HH@HH@HHH@h.T@.H@HH@HHHMB1<!
+                    ~<<TBMHH@HHHH@H@HH@H@H@HH@Ha.JH@HHMH91<!`             `
+                       `!<;?TBMMHH@H@HH@H@H@HHHHMMH96zv?!               `    `
+                            _!<<>?zOTUUUU99UUwttv<?!`                `
+    `                                 `````                   `    `
+             `                                           `              `    `
+######     ######     #######     #####     #     #    #     #    #######
+#     #    #     #    #          #     #    #     #    ##   ##    #
+#     #    #     #    #          #          #     #    # # # #    #
+######     ######     #####       #####     #     #    #  #  #    #####
+#          #   #      #                #    #     #    #     #    #
+#          #    #     #          #     #    #     #    #     #    #
+#          #     #    #######     #####      #####     #     #    #######
 DEBUG MODE of PRESUME
 feat. cassiopeia-model
 github: https://github.com/yachielab/PRESUME
@@ -526,6 +574,7 @@ def PRESUME_CAS(args):
     main function
             commandline argument: "python3 PRESUME.py <timelimit> <options...>"
     '''
+    print(LOGO)
     global alpha, e, idANC, state, prob_of_edit, prob_of_dropout
     state = args.state
     prob_of_edit = args.probedit
@@ -568,6 +617,9 @@ def PRESUME_CAS(args):
     if args.bar:
         from tqdm import tqdm
     C = args.n  # C : number of SEQs you want to get (default == None)
+    if(C is not None):  # if C is specified
+        if(args.qsub):  # for distributed computing
+            C = int(C**(1/2))  # update C
 
     if args.bar:
         pbar = tqdm(range(C))
