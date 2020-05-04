@@ -545,7 +545,7 @@ def jobscript_writer(esu, serial_number, args, timelimit):
         else:
             python_command = PYTHON3 + " " + PRESUME + "/PRESUME.py "\
                 "--monitor " + str(2*timelimit)\
-                + " -L "+str(L)\
+                + " -L "+str(args.L)\
                 + " -f "+"../../../fasta/"+str(esu.id)+".seq"\
                 + " -d "+str(esu.d)\
                 + " -s "+str(args.s)\
