@@ -721,20 +721,29 @@ def main(timelimit):
 
     # in case of distributed computing
     if (args.qsub):
+        
+        # preparation for qsub
+        os.mkdir("intermediate")
+        os.mkdir("intermediate/DOWN")
+        os.mkdir("intermediate/fasta")
+        os.mkdir("intermediate/shell")
+        
         itr = 0
         for esu in SEQqueue:
             itr += 1
             jobscript_writer(esu, itr, args, timelimit)
-        
+
         del(SEQqueue)
         # submit job script to grid engine
         print("\ncreating bottom trees by qsub ...")
         submit_command = "qsub -l d_rt=1:00:00 -l s_rt=1:00:00 -sync y -t 1-{0} \
             {1}/exe_PRESUME.sh &> intermediate/qsub.out".\
             format(str(itr), PRESUME)
+
         subprocess.call(submit_command, shell=True)
 
         # finalize
+
         # remove extinct downstream lineages
         survey_all_dead_lineages(Lineage)
         tip_count, returned_tree, list_of_dead = create_newick(Lineage)

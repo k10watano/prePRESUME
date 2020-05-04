@@ -754,6 +754,13 @@ def PRESUME_CAS(args):
                 break
     # in case of distributed computing
     if args.qsub:
+        # preparation for qsub
+        os.mkdir("intermediate")
+        os.mkdir("intermediate/DOWN")
+        os.mkdir("intermediate/fasta")
+        os.mkdir("intermediate/shell")
+
+        # generate shell script
         itr = 0
         for esu in SEQqueue:
             itr += 1
