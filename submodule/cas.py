@@ -741,6 +741,7 @@ def PRESUME_CAS(args):
             else:
                 print("Number of generated sequences reached "+str(C))
                 break
+
     # in case of distributed computing
     if args.qsub:
         # preparation for qsub
@@ -805,6 +806,17 @@ def PRESUME_CAS(args):
         sequence_writer("root", initseq, "root.seq", False)
 
         # output sequences
+        print("Generating a FASTA file...")
+        for esu in SEQqueue:
+            if(args.idANC is None):
+                esu.id = str(esu.id)
+            else:
+                esu_name_prefix = str(hex(args.idANC)).split("x")[1]
+                esu_name_suffix = str(hex(esu.id)).split("x")[1]
+                new_esu_name = "{}_{}".\
+                    format(esu_name_prefix, esu_name_suffix)
+                esu.id = new_esu_name
+
         if args.n is None:
             sequences_writer(SEQqueue, "PRESUMEout.seq",True) # expect "Downstream" mode
         else:
