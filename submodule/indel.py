@@ -105,7 +105,10 @@ class Lineage(Phylo.BaseTree.Clade):
         else:
             newseq = insertion(seq, in_length)
             newseq = deletion(newseq, del_length)
-        return newseq
+        dseq=""
+        for i in range(len(seq)):
+            dseq = dseq + self.time_dependent_mutation(newseq[i],gamma[i],time)
+        return dseq
 
 ####################
 #  some function
@@ -239,7 +242,7 @@ def PRESUME_INDEL(args):
         arg = argname.pop()
         find_dunder = re.match('^_', arg)
         if not find_dunder:
-            if arg in {"tree", "ram_I", "ram_D", "prop_q", "int_r"} and args.__dict__[arg] is not None:
+            if arg in {"indel", "ram_I", "ram_D", "prop_q", "int_r", "m", "gtrgamma"} and args.__dict__[arg] is not None:
                 name=arg
                 val=args.__dict__[arg]
                 print("PRESUMEnwk2fa: LOADED {1} as {0}".format(name, val))
@@ -308,11 +311,11 @@ def PRESUME_INDEL(args):
         raise ValueError('something went wrong!!!')
 
     fasta_data = [ [item.name ,item.seq] for item in lineage_tree.get_terminals()]
-    with open("ANS_SEQ.fasta", "w") as writer:
+    with open("PRESUMEout.fasta", "w") as writer:
         for item in fasta_data:
             writer.write(">{0}\n{1}\n".format(item[0], item[1]))
     # [ print(">{0}\n{1}".format(idx, item)) for idx, item in enumerate(seq)]
-    Phylo.write(lineage_tree, "test.nwk", "newick")
+    Phylo.write(lineage_tree, "PRESUMEout.nwk", "newick")
 
 if __name__=="__main__":
     ######## processing some args ########
