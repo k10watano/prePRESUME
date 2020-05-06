@@ -232,6 +232,7 @@ def P(t, gamma, Al, U): # return transition matrix
     return np.dot(np.dot(U,exp_rambda),np.linalg.inv(U))
 
 def PRESUME_INDEL(args):
+    print(LOGO)
     argname = dir(args)
     print(argname)
     while argname != []:
