@@ -630,8 +630,8 @@ def PRESUME_CAS(args):
     Lineage = [[]] * UPPER_LIMIT
 
     # DEBUG: for gathering mutation rate of each site
-    if args.debug:
-        mut_rate_log = {}
+    # if args.debug:
+    #     mut_rate_log = {}
 
     # First of all, there exits only 1 SEQ.
     if args.CV:
@@ -693,10 +693,10 @@ def PRESUME_CAS(args):
 
                 SEQqueue.extend(daughter)
 
-                if args.debug:
-                    for sister in daughter:
-                        if sister.is_alive:
-                            mut_rate_log[sister.id]=sister.mutation_rate
+                # if args.debug:
+                #     for sister in daughter:
+                #         if sister.is_alive:
+                #             mut_rate_log[sister.id]=sister.mutation_rate
 
                 # [<mother>, <daughter1>, <daughter2> ]
                 Lineage[esu.id] = [esu.idM, i, i+1]
@@ -768,8 +768,8 @@ def PRESUME_CAS(args):
         # remove extinct downstream lineages
         survey_all_dead_lineages(Lineage)
         tip_count, returned_tree, list_of_dead = create_newick(Lineage)
-        if args.debug:
-            mut_rate_log_writer(mut_rate_log, list_of_dead)
+        # if args.debug:
+        #     mut_rate_log_writer(mut_rate_log, list_of_dead)
 
         command = "cat PRESUME.e*.* > intermediate/err; \
                 cat PRESUME.o*.* > intermediate/out; rm PRESUME.*"
@@ -806,7 +806,7 @@ def PRESUME_CAS(args):
         sequence_writer("root", initseq, "root.seq", False)
 
         # output sequences
-        print("Generating a FASTA file...")
+        print("Generating a SEQ file...")
         for esu in SEQqueue:
             if(args.idANC is None):
                 esu.id = str(esu.id)

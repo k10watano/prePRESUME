@@ -6,5 +6,5 @@ OUTDIR=${THIS_PATH}/test
 TREE="${THIS_PATH}/../example/example_1/PRESUMEout/PRESUMEout.nwk"
 # run PRESUME
 mkdir ${OUTDIR}
-python3 ${PRESUME} --output ${OUTDIR} --cassiopeia -n 100
+python3 ${PRESUME} --output ${OUTDIR} --cassiopeia -n 100 --idANC 0
 echo "Done!"
