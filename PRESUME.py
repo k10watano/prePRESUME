@@ -1037,6 +1037,41 @@ if __name__ == "__main__":
         default=0
         )
 
+    parser.add_argument(
+        "--indel",
+        help="file name of a guide tree for indel-model simulation",
+        type=str,
+        default=None,
+    )
+    
+    parser.add_argument(
+        "--ram_I", 
+        help="rate of insertion. (default=0)", 
+        type=float, 
+        default=0
+        )
+    
+    parser.add_argument(
+        "--ram_D", 
+        help="rate of insertion. (default=0)", 
+        type=float, 
+        default=0
+        )
+    
+    parser.add_argument(
+        "--prop_q",
+         help="q of negative binomal distribution as indel size distribution. (default=0.1, must be float)",
+        type=float, 
+        default=0.1
+        )
+    
+    parser.add_argument(
+        "--int_r", 
+        help="r of negative binomal distribution as indel size distribution. (default=1, must be integer.)", 
+        type=float, 
+        default=1
+        )
+    
     args = parser.parse_args()
     
     # "Code Ocean" specific process
@@ -1052,6 +1087,11 @@ if __name__ == "__main__":
 
     if args.version:
         print(LOGO)
+        exit()
+
+    if args.indel:
+        import submodule.indel as indel
+        indel.PRESUME_INDEL(args)
         exit()
 
     if args.cassiopeia:
