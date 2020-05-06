@@ -379,8 +379,8 @@ def create_newick(Lineage):
 def survey_all_dead_lineages(Lineage):
     try:
         command = "cat intermediate/DOWN/*/all_SEQ_dead.out \
-            > intermediate/all_dead.out; \
-            rm intermediate/DOWN/*/all_SEQ_dead.out"
+            > intermediate/all_dead.out 2> /dev/null; \
+            rm intermediate/DOWN/*/all_SEQ_dead.out 2> /dev/null"
         subprocess.call(command, shell=True)
 
     except Exception as e:
@@ -742,6 +742,9 @@ def PRESUME_CAS(args):
                 print("Number of generated sequences reached "+str(C))
                 break
 
+    # output initial sequence
+    sequence_writer("root", initseq, "root.seq", False)
+
     # in case of distributed computing
     if args.qsub:
         # preparation for qsub
@@ -772,7 +775,7 @@ def PRESUME_CAS(args):
         #     mut_rate_log_writer(mut_rate_log, list_of_dead)
 
         command = "cat PRESUME.e*.* > intermediate/err; \
-                cat PRESUME.o*.* > intermediate/out; rm PRESUME.*"
+                cat PRESUME.o*.* > intermediate/out;"
         subprocess.call(command, shell=True)
 
         # processing seq files
@@ -802,9 +805,6 @@ def PRESUME_CAS(args):
             shutil.rmtree("intermediate")
 
     else:
-        # output initial sequence
-        sequence_writer("root", initseq, "root.seq", False)
-
         # output sequences
         print("Generating a SEQ file...")
         for esu in SEQqueue:
