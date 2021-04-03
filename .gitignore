@@ -1,3 +1,6 @@
-.dev
+submodule/__pycache__/*
+submodule/*.ipynb
 .vscode
+__pycache__/*
+.dev
 .DS_Store
